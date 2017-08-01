@@ -1,0 +1,13 @@
+[package]
+name = "tempfile-fast"
+version = "0.1.0"
+authors = ["Chris West (Faux) <git@goeswhere.com>"]
+
+[dependencies]
+tempfile = "2.1.6"
+
+[dev-dependencies]
+tempdir = "0.3.5"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
