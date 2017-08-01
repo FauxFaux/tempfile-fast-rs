@@ -3,6 +3,12 @@ name = "tempfile-fast"
 version = "0.1.0"
 authors = ["Chris West (Faux) <git@goeswhere.com>"]
 
+description = "Support for Linux-specific tempfile extensions"
+repository = "https://github.com/FauxFaux/tempfile-fast-rs"
+readme = "README.md"
+categories = ["filesystem", "os"]
+license = "MIT"
+
 [dependencies]
 tempfile = "2.1.6"
 

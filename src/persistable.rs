@@ -1,5 +1,7 @@
 use std::fs;
 use std::io;
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::path::Path;
 
 use tempfile;
@@ -12,6 +14,8 @@ pub enum PersistableTempFile {
 
 use self::PersistableTempFile::*;
 
+/// Create a temporary file in a given filesystem, or, if the filesystem does not support
+/// creating secure temporary files, create a `tempfile::NamedTemporaryFile`.
 pub fn persistable_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<PersistableTempFile> {
     if let Ok(file) = linux::create_nonexclusive_tempfile_in(&dir) {
         return Ok(Linux(file));
@@ -29,7 +33,34 @@ impl AsRef<fs::File> for PersistableTempFile {
     }
 }
 
+impl AsMut<fs::File> for PersistableTempFile {
+    fn as_mut(&mut self) -> &mut fs::File {
+        match *self {
+            Linux(ref mut file) => file,
+            Fallback(ref mut named) => named,
+        }
+    }
+}
+
+impl Deref for PersistableTempFile {
+    type Target = fs::File;
+    #[inline]
+    fn deref(&self) -> &fs::File {
+        self.as_ref()
+    }
+}
+
+impl DerefMut for PersistableTempFile {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut fs::File {
+        self.as_mut()
+    }
+}
+
 impl PersistableTempFile {
+    /// Store this temporary file into a real file path.
+    ///
+    /// The path must not exist, and must be on the same "filesystem".
     pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> io::Result<()> {
         match self {
             Linux(file) => linux::link_at(file, dest),
