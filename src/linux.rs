@@ -4,11 +4,11 @@ use std::io;
 use std::path::Path;
 use std::ffi::CString;
 
-use std::os::unix::io::{RawFd, FromRawFd, AsRawFd};
+use std::os::unix::io::{FromRawFd, AsRawFd};
 use std::os::unix::ffi::OsStrExt;
 
 use libc::open64 as open;
-use libc::{link, linkat, c_char, c_int, O_RDWR, O_CREAT, O_CLOEXEC};
+use libc::{linkat, c_char, c_int, O_RDWR, O_CLOEXEC};
 const O_TMPFILE: c_int = 0o20200000;
 
 pub fn create_nonexclusive_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<fs::File> {
