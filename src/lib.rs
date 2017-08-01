@@ -30,4 +30,5 @@ mod linux {
 
 mod persistable;
 
+pub use persistable::PersistableTempFile;
 pub use persistable::persistable_tempfile_in;
