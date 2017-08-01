@@ -22,9 +22,9 @@ pub fn persistable_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<Persistable
 
 impl AsRef<fs::File> for PersistableTempFile {
     fn as_ref(&self) -> &fs::File {
-        match self {
-            &Linux(ref file) => file,
-            &Fallback(ref named) => named,
+        match *self {
+            Linux(ref file) => file,
+            Fallback(ref named) => named,
         }
     }
 }
