@@ -12,8 +12,8 @@
 //! temp.persist_noclobber("/var/lib/foo/bar").unwrap();
 //! ```
 
-extern crate tempfile;
 extern crate libc;
+extern crate tempfile;
 
 #[cfg(target_os = "linux")]
 mod linux;

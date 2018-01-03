@@ -1,14 +1,18 @@
+use std::ffi::CString;
 use std::fs;
 use std::io;
-
-use std::path::Path;
-use std::ffi::CString;
-
-use std::os::unix::io::{FromRawFd, AsRawFd};
+use std::os::unix::io::AsRawFd;
+use std::os::unix::io::FromRawFd;
 use std::os::unix::ffi::OsStrExt;
+use std::path::Path;
 
 use libc::open64 as open;
-use libc::{linkat, c_char, c_int, O_RDWR, O_CLOEXEC};
+use libc::c_char;
+use libc::c_int;
+use libc::linkat;
+use libc::O_CLOEXEC;
+use libc::O_RDWR;
+
 const O_TMPFILE: c_int = 0o20200000;
 
 pub fn create_nonexclusive_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<fs::File> {
@@ -22,8 +26,6 @@ pub fn link_at<P: AsRef<Path>>(what: fs::File, dest: P) -> io::Result<()> {
     unsafe { link_symlink_fd_at(&old_path, &new_path) }
 }
 
-
-
 // Stolen from tempfile / std < 1.6.0.
 pub fn cstr(path: &Path) -> io::Result<CString> {
     CString::new(path.as_os_str().as_bytes())
@@ -33,9 +35,7 @@ pub fn cstr(path: &Path) -> io::Result<CString> {
 pub fn create(dir: &Path) -> io::Result<fs::File> {
     match unsafe {
         let path = cstr(dir)?;
-        open(path.as_ptr(),
-             O_CLOEXEC | O_TMPFILE | O_RDWR,
-             0o600)
+        open(path.as_ptr(), O_CLOEXEC | O_TMPFILE | O_RDWR, 0o600)
     } {
         -1 => Err(io::ErrorKind::InvalidInput.into()),
         fd => Ok(unsafe { FromRawFd::from_raw_fd(fd) }),
@@ -47,11 +47,14 @@ unsafe fn link_symlink_fd_at(old_path: &CString, new_path: &CString) -> io::Resu
     const AT_FDCWD: c_int = -100;
     const AT_SYMLINK_FOLLOW: c_int = 0x400;
 
-    if linkat(AT_FDCWD,
-              old_path.as_ptr() as *const c_char,
-              AT_FDCWD,
-              new_path.as_ptr() as *const c_char,
-              AT_SYMLINK_FOLLOW) != 0 {
+    if linkat(
+        AT_FDCWD,
+        old_path.as_ptr() as *const c_char,
+        AT_FDCWD,
+        new_path.as_ptr() as *const c_char,
+        AT_SYMLINK_FOLLOW,
+    ) != 0
+    {
         Err(io::Error::last_os_error())
     } else {
         Ok(())

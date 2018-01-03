@@ -22,7 +22,8 @@ impl PersistableTempFile {
             return Ok(Linux(file));
         }
 
-        Ok(Fallback(tempfile::NamedTempFileOptions::new().create_in(dir)?))
+        Ok(Fallback(tempfile::NamedTempFileOptions::new()
+            .create_in(dir)?))
     }
 }
 
@@ -69,7 +70,7 @@ impl PersistableTempFile {
             Fallback(named) => {
                 named.persist_noclobber(dest)?;
                 Ok(())
-            },
+            }
         }
     }
 }

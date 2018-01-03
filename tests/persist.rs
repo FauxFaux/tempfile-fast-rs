@@ -11,7 +11,8 @@ fn empty_on_linux() {
     let tmp = PersistableTempFile::new_in(&temp_dir).unwrap();
 
     // Will only actually be deleted on (modern) linux:
-    #[cfg(target_os = "linux")] {
+    #[cfg(target_os = "linux")]
+    {
         assert_eq!(0, fs::read_dir(&temp_dir).unwrap().count());
     }
 
