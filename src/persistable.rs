@@ -14,14 +14,16 @@ pub enum PersistableTempFile {
 
 use self::PersistableTempFile::*;
 
-/// Create a temporary file in a given filesystem, or, if the filesystem does not support
-/// creating secure temporary files, create a `tempfile::NamedTemporaryFile`.
-pub fn persistable_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<PersistableTempFile> {
-    if let Ok(file) = linux::create_nonexclusive_tempfile_in(&dir) {
-        return Ok(Linux(file));
-    }
+impl PersistableTempFile {
+    /// Create a temporary file in a given filesystem, or, if the filesystem does not support
+    /// creating secure temporary files, create a `tempfile::NamedTemporaryFile`.
+    pub fn new_in<P: AsRef<Path>>(dir: P) -> io::Result<PersistableTempFile> {
+        if let Ok(file) = linux::create_nonexclusive_tempfile_in(&dir) {
+            return Ok(Linux(file));
+        }
 
-    Ok(Fallback(tempfile::NamedTempFileOptions::new().create_in(dir)?))
+        Ok(Fallback(tempfile::NamedTempFileOptions::new().create_in(dir)?))
+    }
 }
 
 impl AsRef<fs::File> for PersistableTempFile {

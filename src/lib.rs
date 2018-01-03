@@ -7,7 +7,7 @@
 //! ```rust,no_run
 //! # use std::io::Write;
 //! extern crate tempfile_fast;
-//! let mut temp =  tempfile_fast::persistable_tempfile_in("/var/lib/foo").unwrap();
+//! let mut temp =  tempfile_fast::PersistableTempFile::new_in("/var/lib/foo").unwrap();
 //! temp.write_all(b"hello").unwrap();
 //! temp.persist_noclobber("/var/lib/foo/bar").unwrap();
 //! ```
@@ -31,4 +31,3 @@ mod linux {
 mod persistable;
 
 pub use persistable::PersistableTempFile;
-pub use persistable::persistable_tempfile_in;

@@ -3,12 +3,12 @@ extern crate tempfile_fast;
 
 use std::fs;
 
-use tempfile_fast::persistable_tempfile_in;
+use tempfile_fast::PersistableTempFile;
 
 #[test]
 fn empty_on_linux() {
     let temp_dir = tempdir::TempDir::new("tempfile-deleted").unwrap();
-    let tmp = persistable_tempfile_in(&temp_dir).unwrap();
+    let tmp = PersistableTempFile::new_in(&temp_dir).unwrap();
 
     // Will only actually be deleted on (modern) linux:
     #[cfg(target_os = "linux")] {
