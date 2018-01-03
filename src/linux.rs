@@ -19,7 +19,7 @@ pub fn create_nonexclusive_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<fs:
     create(dir.as_ref())
 }
 
-pub fn link_at<P: AsRef<Path>>(what: fs::File, dest: P) -> io::Result<()> {
+pub fn link_at<P: AsRef<Path>>(what: &fs::File, dest: P) -> io::Result<()> {
     let old_path: CString = CString::new(format!("/proc/self/fd/{}", what.as_raw_fd())).unwrap();
     let new_path = cstr(dest.as_ref())?;
 

@@ -1,3 +1,4 @@
+use std::fmt;
 use std::fs;
 use std::io;
 use std::ops::Deref;
@@ -60,17 +61,48 @@ impl DerefMut for PersistableTempFile {
     }
 }
 
+impl fmt::Debug for PersistableTempFile {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "PersistableTempFile::{}",
+            match *self {
+                Linux(_) => "Linux",
+                Fallback(_) => "Fallback",
+            }
+        )
+    }
+}
+
+/// Error returned when persisting a temporary file fails
+#[derive(Debug)]
+pub struct PersistError {
+    /// The underlying IO error.
+    pub error: io::Error,
+    /// The temporary file that couldn't be persisted.
+    pub file: PersistableTempFile,
+}
+
 impl PersistableTempFile {
     /// Store this temporary file into a real file path.
     ///
     /// The path must not exist, and must be on the same "filesystem".
-    pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> io::Result<()> {
+    pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> Result<fs::File, PersistError> {
         match self {
-            Linux(file) => linux::link_at(file, dest),
-            Fallback(named) => {
-                named.persist_noclobber(dest)?;
-                Ok(())
-            }
+            Linux(file) => match linux::link_at(&file, &dest) {
+                Ok(()) => fs::File::open(dest).map_err(|error| PersistError {
+                    error,
+                    file: PersistableTempFile::Linux(file),
+                }),
+                Err(error) => Err(PersistError {
+                    error,
+                    file: PersistableTempFile::Linux(file),
+                }),
+            },
+            Fallback(named) => named.persist_noclobber(dest).map_err(|e| PersistError {
+                error: e.error,
+                file: PersistableTempFile::Fallback(e.file),
+            }),
         }
     }
 }
