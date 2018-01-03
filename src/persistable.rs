@@ -5,6 +5,8 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::path::Path;
 
+use rand::Rng;
+
 use tempfile;
 use linux;
 
@@ -83,6 +85,15 @@ pub struct PersistError {
     pub file: PersistableTempFile,
 }
 
+impl From<tempfile::PersistError> for PersistError {
+    fn from(e: tempfile::PersistError) -> Self {
+        PersistError {
+            error: e.error,
+            file: PersistableTempFile::Fallback(e.file),
+        }
+    }
+}
+
 impl PersistableTempFile {
     /// Store this temporary file into a real file path.
     ///
@@ -93,12 +104,43 @@ impl PersistableTempFile {
                 error,
                 file: PersistableTempFile::Linux(file),
             }),
-            Fallback(named) => named.persist_noclobber(dest).map(|_| ()).map_err(|e| {
-                PersistError {
-                    error: e.error,
-                    file: PersistableTempFile::Fallback(e.file),
-                }
-            }),
+            Fallback(named) => named
+                .persist_noclobber(dest)
+                .map(|_| ())
+                .map_err(PersistError::from),
         }
+    }
+
+    pub fn persist_by_rename<P: AsRef<Path>>(self, dest: P) -> io::Result<()> {
+        if let Fallback(named) = self {
+            return named.persist(dest).map(|_| ()).map_err(|e| e.error);
+        };
+
+        let mut file = match self.persist_noclobber(&dest) {
+            Ok(()) => return Ok(()),
+            Err(PersistError { file, .. }) => file,
+        };
+
+        let mut dest_dir = dest.as_ref().to_path_buf();
+        let mut rng = ::rand::thread_rng();
+
+        dest_dir.pop();
+        for _ in 0..32768 {
+            dest_dir.push(rng.gen_ascii_chars().take(6).collect::<String>());
+            file = match file.persist_noclobber(&dest_dir) {
+                Ok(()) => return fs::rename(dest_dir, dest),
+                Err(e) => if io::ErrorKind::AlreadyExists != e.error.kind() {
+                    return Err(e.error);
+                } else {
+                    e.file
+                },
+            };
+            dest_dir.pop();
+        }
+
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "couldn't create temporary file",
+        ))
     }
 }

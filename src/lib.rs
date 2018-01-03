@@ -13,6 +13,7 @@
 //! ```
 
 extern crate libc;
+extern crate rand;
 extern crate tempfile;
 
 #[cfg(target_os = "linux")]
