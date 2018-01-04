@@ -24,6 +24,7 @@ mod linux {
     use std::fs;
     use std::io;
 
+    #[inline]
     fn create_nonexclusive_tempfile_in<P>(dir: P) -> io::Result<fs::File> {
         Err(io::ErrorKind::InvalidInput.into())
     }
