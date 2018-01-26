@@ -112,23 +112,17 @@ impl PersistableTempFile {
         }
     }
 
-    fn persist_noclobber_ref<P: AsRef<Path>>(&self, dest: P) -> io::Result<()> {
-        match *self {
-            Linux(ref file) => Self::persist_noclobber_file(file, &dest),
-            Fallback(_) => unimplemented!(),
-        }
-    }
-
     fn persist_noclobber_file<P: AsRef<Path>>(file: &fs::File, dest: P) -> io::Result<()> {
         linux::link_at(file, dest)
     }
 
     pub fn persist_by_rename<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
-        if let Fallback(named) = self {
-            return named.persist(dest).map(|_| ()).map_err(PersistError::from);
+        let file = match self {
+            Linux(file) => file,
+            Fallback(named) => return named.persist(dest).map(|_| ()).map_err(PersistError::from),
         };
 
-        if self.persist_noclobber_ref(&dest).is_ok() {
+        if Self::persist_noclobber_file(&file, &dest).is_ok() {
             return Ok(());
         };
 
@@ -138,13 +132,13 @@ impl PersistableTempFile {
         dest_dir.pop();
         for _ in 0..32768 {
             dest_dir.push(rng.gen_ascii_chars().take(6).collect::<String>());
-            match self.persist_noclobber_ref(&dest_dir) {
+            match Self::persist_noclobber_file(&file, &dest_dir) {
                 Ok(()) => {
                     return fs::rename(dest_dir, dest)
-                        .map_err(|error| PersistError { error, file: self })
+                        .map_err(|error| PersistError { error, file: PersistableTempFile::Linux(file) })
                 }
                 Err(error) => if io::ErrorKind::AlreadyExists != error.kind() {
-                    return Err(PersistError { error, file: self });
+                    return Err(PersistError { error, file: PersistableTempFile::Linux(file) });
                 },
             };
             dest_dir.pop();
@@ -152,7 +146,7 @@ impl PersistableTempFile {
 
         Err(PersistError {
             error: io::Error::new(io::ErrorKind::Other, "couldn't create temporary file"),
-            file: self,
+            file: PersistableTempFile::Linux(file),
         })
     }
 }
