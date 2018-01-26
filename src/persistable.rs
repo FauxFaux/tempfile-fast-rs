@@ -25,8 +25,7 @@ impl PersistableTempFile {
             return Ok(Linux(file));
         }
 
-        Ok(Fallback(tempfile::NamedTempFileOptions::new()
-            .create_in(dir)?))
+        Ok(Fallback(tempfile::NamedTempFileOptions::new().create_in(dir)?))
     }
 }
 
@@ -100,10 +99,12 @@ impl PersistableTempFile {
     /// The path must not exist, and must be on the same "filesystem".
     pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         match self {
-            Linux(file) => linux::link_at(&file, &dest).map_err(|error| PersistError {
-                error,
-                file: PersistableTempFile::Linux(file),
-            }),
+            Linux(file) => {
+                Self::persist_noclobber_file(&file, dest).map_err(|error| PersistError {
+                    error,
+                    file: PersistableTempFile::Linux(file),
+                })
+            }
             Fallback(named) => named
                 .persist_noclobber(dest)
                 .map(|_| ())
@@ -111,14 +112,24 @@ impl PersistableTempFile {
         }
     }
 
-    pub fn persist_by_rename<P: AsRef<Path>>(self, dest: P) -> io::Result<()> {
+    fn persist_noclobber_ref<P: AsRef<Path>>(&self, dest: P) -> io::Result<()> {
+        match *self {
+            Linux(ref file) => Self::persist_noclobber_file(file, &dest),
+            Fallback(_) => unimplemented!(),
+        }
+    }
+
+    fn persist_noclobber_file<P: AsRef<Path>>(file: &fs::File, dest: P) -> io::Result<()> {
+        linux::link_at(file, dest)
+    }
+
+    pub fn persist_by_rename<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         if let Fallback(named) = self {
-            return named.persist(dest).map(|_| ()).map_err(|e| e.error);
+            return named.persist(dest).map(|_| ()).map_err(PersistError::from);
         };
 
-        let mut file = match self.persist_noclobber(&dest) {
-            Ok(()) => return Ok(()),
-            Err(PersistError { file, .. }) => file,
+        if self.persist_noclobber_ref(&dest).is_ok() {
+            return Ok(());
         };
 
         let mut dest_dir = dest.as_ref().to_path_buf();
@@ -127,20 +138,21 @@ impl PersistableTempFile {
         dest_dir.pop();
         for _ in 0..32768 {
             dest_dir.push(rng.gen_ascii_chars().take(6).collect::<String>());
-            file = match file.persist_noclobber(&dest_dir) {
-                Ok(()) => return fs::rename(dest_dir, dest),
-                Err(e) => if io::ErrorKind::AlreadyExists != e.error.kind() {
-                    return Err(e.error);
-                } else {
-                    e.file
+            match self.persist_noclobber_ref(&dest_dir) {
+                Ok(()) => {
+                    return fs::rename(dest_dir, dest)
+                        .map_err(|error| PersistError { error, file: self })
+                }
+                Err(error) => if io::ErrorKind::AlreadyExists != error.kind() {
+                    return Err(PersistError { error, file: self });
                 },
             };
             dest_dir.pop();
         }
 
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "couldn't create temporary file",
-        ))
+        Err(PersistError {
+            error: io::Error::new(io::ErrorKind::Other, "couldn't create temporary file"),
+            file: self,
+        })
     }
 }
