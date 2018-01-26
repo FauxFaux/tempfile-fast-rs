@@ -134,10 +134,7 @@ impl PersistableTempFile {
 
         for _ in 0..32768 {
             // add a new filename
-            dest_tmp.push(format!(
-                ".{}.tmp",
-                rng.gen_ascii_chars().take(6).collect::<String>()
-            ));
+            dest_tmp.push(format!(".{:x}.tmp", rng.next_u64()));
 
             match Self::persist_noclobber_file(&file, &dest_tmp) {
                 Ok(()) => {
