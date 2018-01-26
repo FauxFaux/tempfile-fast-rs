@@ -126,22 +126,45 @@ impl PersistableTempFile {
             return Ok(());
         };
 
-        let mut dest_dir = dest.as_ref().to_path_buf();
+        let mut dest_tmp = dest.as_ref().to_path_buf();
         let mut rng = ::rand::thread_rng();
 
-        dest_dir.pop();
+        // pop the filename off
+        dest_tmp.pop();
+
         for _ in 0..32768 {
-            dest_dir.push(rng.gen_ascii_chars().take(6).collect::<String>());
-            match Self::persist_noclobber_file(&file, &dest_dir) {
+            // add a new filename
+            dest_tmp.push(format!(
+                ".{}.tmp",
+                rng.gen_ascii_chars().take(6).collect::<String>()
+            ));
+
+            match Self::persist_noclobber_file(&file, &dest_tmp) {
                 Ok(()) => {
-                    return fs::rename(dest_dir, dest)
-                        .map_err(|error| PersistError { error, file: PersistableTempFile::Linux(file) })
+                    // we succeeded in converting into a named temporary file,
+                    // now overwrite the destination
+                    return match fs::rename(&dest_tmp, dest) {
+                        Ok(()) => Ok(()),
+                        Err(error) => {
+                            // we couldn't overwrite the destination. Try and remove the
+                            // temporary file we created, but, if we can't, just sigh.
+                            let _ = fs::remove_file(&dest_tmp);
+
+                            Err(PersistError {
+                                error,
+                                file: PersistableTempFile::Linux(file),
+                            })
+                        }
+                    };
                 }
                 Err(error) => if io::ErrorKind::AlreadyExists != error.kind() {
-                    return Err(PersistError { error, file: PersistableTempFile::Linux(file) });
+                    return Err(PersistError {
+                        error,
+                        file: PersistableTempFile::Linux(file),
+                    });
                 },
             };
-            dest_dir.pop();
+            dest_tmp.pop();
         }
 
         Err(PersistError {
