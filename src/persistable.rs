@@ -1,6 +1,8 @@
 use std::fmt;
 use std::fs;
 use std::io;
+use std::io::Read;
+use std::io::Write;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::path::Path;
@@ -10,6 +12,7 @@ use rand::Rng;
 use tempfile;
 use linux;
 
+/// An abstraction over different platform-specific temporary file optimisations.
 pub enum PersistableTempFile {
     Linux(fs::File),
     Fallback(tempfile::NamedTempFile),
@@ -30,6 +33,7 @@ impl PersistableTempFile {
 }
 
 impl AsRef<fs::File> for PersistableTempFile {
+    #[inline]
     fn as_ref(&self) -> &fs::File {
         match *self {
             Linux(ref file) => file,
@@ -39,6 +43,7 @@ impl AsRef<fs::File> for PersistableTempFile {
 }
 
 impl AsMut<fs::File> for PersistableTempFile {
+    #[inline]
     fn as_mut(&mut self) -> &mut fs::File {
         match *self {
             Linux(ref mut file) => file,
@@ -72,6 +77,22 @@ impl fmt::Debug for PersistableTempFile {
                 Fallback(_) => "Fallback",
             }
         )
+    }
+}
+
+impl Read for PersistableTempFile {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.as_mut().read(buf)
+    }
+}
+
+impl Write for PersistableTempFile {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.as_mut().write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.as_mut().flush()
     }
 }
 
