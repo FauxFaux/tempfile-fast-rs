@@ -2,6 +2,8 @@ use std::fmt;
 use std::fs;
 use std::io;
 use std::io::Read;
+use std::io::Seek;
+use std::io::SeekFrom;
 use std::io::Write;
 use std::ops::Deref;
 use std::ops::DerefMut;
@@ -93,6 +95,50 @@ impl Write for PersistableTempFile {
 
     fn flush(&mut self) -> io::Result<()> {
         self.as_mut().flush()
+    }
+}
+
+impl Seek for PersistableTempFile {
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        self.as_mut().seek(pos)
+    }
+}
+
+impl<'a> Read for &'a PersistableTempFile {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.as_ref().read(buf)
+    }
+}
+
+impl<'a> Write for &'a PersistableTempFile {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.as_ref().write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.as_ref().flush()
+    }
+}
+
+impl<'a> Seek for &'a PersistableTempFile {
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        self.as_ref().seek(pos)
+    }
+}
+
+#[cfg(unix)]
+impl ::std::os::unix::io::AsRawFd for PersistableTempFile {
+    #[inline]
+    fn as_raw_fd(&self) -> ::std::os::unix::io::RawFd {
+        self.as_ref().as_raw_fd()
+    }
+}
+
+#[cfg(windows)]
+impl ::std::os::windows::io::AsRawHandle for PersistableTempFile {
+    #[inline]
+    fn as_raw_handle(&self) -> ::std::os::windows::io::RawHandle {
+        self.as_ref().as_raw_handle()
     }
 }
 

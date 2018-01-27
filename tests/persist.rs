@@ -3,6 +3,8 @@ extern crate tempfile_fast;
 
 use std::fs;
 use std::io::Read;
+use std::io::Seek;
+use std::io::SeekFrom;
 use std::io::Write;
 
 use tempfile_fast::PersistableTempFile;
@@ -63,4 +65,30 @@ fn overwrite() {
         fs::read_dir(root).unwrap().count(),
         "didn't create anything in the parent directory, either"
     );
+}
+
+fn write_hi<W: Write>(mut thing: W) -> W {
+    thing.write_all(b"hi").unwrap();
+    thing
+}
+
+fn read<R: Read>(mut thing: R) -> String {
+    let mut s = String::new();
+    thing.read_to_string(&mut s).unwrap();
+    s
+}
+
+#[test]
+fn read_write() {
+    let temp_dir = tempdir::TempDir::new("tempfile-deleted").unwrap();
+    let mut tmp = PersistableTempFile::new_in(temp_dir.path()).unwrap();
+    write_hi(&mut tmp);
+    let mut tmp = write_hi(tmp);
+
+    assert_eq!(1, (&mut tmp).seek(SeekFrom::Current(-3)).unwrap());
+
+    assert_eq!("ihi", read(&mut tmp));
+
+    assert_eq!(0, tmp.seek(SeekFrom::Start(0)).unwrap());
+    assert_eq!("hihi", read(tmp));
 }
