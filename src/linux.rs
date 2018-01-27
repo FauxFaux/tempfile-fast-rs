@@ -8,7 +8,6 @@ use std::path::Path;
 
 use libc::open64 as open;
 use libc::c_char;
-use libc::c_int;
 use libc::linkat;
 use libc::O_CLOEXEC;
 use libc::O_RDWR;
