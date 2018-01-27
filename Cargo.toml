@@ -17,4 +17,4 @@ tempfile = "2"
 tempdir = "0.3"
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2"
+libc = "0.2.22"

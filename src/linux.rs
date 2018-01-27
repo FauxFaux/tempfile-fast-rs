@@ -12,6 +12,8 @@ use libc::c_int;
 use libc::linkat;
 use libc::O_CLOEXEC;
 use libc::O_RDWR;
+use libc::AT_SYMLINK_FOLLOW;
+use libc::AT_FDCWD;
 
 const O_TMPFILE: c_int = 0o20200000;
 
@@ -44,9 +46,6 @@ pub fn create(dir: &Path) -> io::Result<fs::File> {
 
 /// Attempt to link an old symlink to a file back into the filesystem.
 unsafe fn link_symlink_fd_at(old_path: &CString, new_path: &CString) -> io::Result<()> {
-    const AT_FDCWD: c_int = -100;
-    const AT_SYMLINK_FOLLOW: c_int = 0x400;
-
     if linkat(
         AT_FDCWD,
         old_path.as_ptr() as *const c_char,

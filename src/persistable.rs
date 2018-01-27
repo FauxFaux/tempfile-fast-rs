@@ -183,6 +183,12 @@ impl PersistableTempFile {
         linux::link_at(file, dest)
     }
 
+    /// Store this temporary file into a real name.
+    ///
+    /// The path must be on the same filesystem. It may exist, and will be overwritten.
+    ///
+    /// This method may create a named temporary file, and, in pathological failure cases,
+    /// may silently fail to remove this temporary file. Sorry.
     pub fn persist_by_rename<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         let file = match self {
             Linux(file) => file,
