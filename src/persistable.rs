@@ -207,19 +207,16 @@ impl PersistableTempFile {
                 Ok(()) => {
                     // we succeeded in converting into a named temporary file,
                     // now overwrite the destination
-                    return match fs::rename(&dest_tmp, dest) {
-                        Ok(()) => Ok(()),
-                        Err(error) => {
-                            // we couldn't overwrite the destination. Try and remove the
-                            // temporary file we created, but, if we can't, just sigh.
-                            let _ = fs::remove_file(&dest_tmp);
+                    return fs::rename(&dest_tmp, dest).map_err(|error| {
+                        // we couldn't overwrite the destination. Try and remove the
+                        // temporary file we created, but, if we can't, just sigh.
+                        let _ = fs::remove_file(&dest_tmp);
 
-                            Err(PersistError {
-                                error,
-                                file: PersistableTempFile::Linux(file),
-                            })
+                        PersistError {
+                            error,
+                            file: PersistableTempFile::Linux(file),
                         }
-                    };
+                    });
                 }
                 Err(error) => if io::ErrorKind::AlreadyExists != error.kind() {
                     return Err(PersistError {
