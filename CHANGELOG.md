@@ -1,5 +1,6 @@
 ### v0.2.0
 
+ * Object, not free function.
  * `persist_noclobber` now returns `PersistError` containing `Self`,
       allowing recovery from failure. 
  * add `persist_by_rename`, utilising the above behaviour.
