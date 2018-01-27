@@ -12,10 +12,9 @@ use libc::c_int;
 use libc::linkat;
 use libc::O_CLOEXEC;
 use libc::O_RDWR;
+use libc::O_TMPFILE;
 use libc::AT_SYMLINK_FOLLOW;
 use libc::AT_FDCWD;
-
-const O_TMPFILE: c_int = 0o20200000;
 
 pub fn create_nonexclusive_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<fs::File> {
     create(dir.as_ref())
