@@ -1,3 +1,5 @@
+extern crate libc;
+
 use std::ffi::CString;
 use std::fs;
 use std::io;
@@ -6,14 +8,14 @@ use std::os::unix::io::FromRawFd;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
-use libc::open64 as open;
-use libc::c_char;
-use libc::linkat;
-use libc::O_CLOEXEC;
-use libc::O_RDWR;
-use libc::O_TMPFILE;
-use libc::AT_SYMLINK_FOLLOW;
-use libc::AT_FDCWD;
+use self::libc::open64 as open;
+use self::libc::c_char;
+use self::libc::linkat;
+use self::libc::O_CLOEXEC;
+use self::libc::O_RDWR;
+use self::libc::O_TMPFILE;
+use self::libc::AT_SYMLINK_FOLLOW;
+use self::libc::AT_FDCWD;
 
 pub fn create_nonexclusive_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<fs::File> {
     create(dir.as_ref())

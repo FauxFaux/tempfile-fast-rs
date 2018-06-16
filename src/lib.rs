@@ -12,7 +12,6 @@
 //! temp.persist_noclobber("/var/lib/foo/bar").unwrap();
 //! ```
 
-extern crate libc;
 extern crate rand;
 extern crate tempfile;
 
