@@ -30,7 +30,7 @@ impl PersistableTempFile {
             return Ok(Linux(file));
         }
 
-        Ok(Fallback(tempfile::NamedTempFileOptions::new().create_in(dir)?))
+        Ok(Fallback(tempfile::Builder::new().tempfile_in(dir)?))
     }
 }
 
@@ -39,7 +39,7 @@ impl AsRef<fs::File> for PersistableTempFile {
     fn as_ref(&self) -> &fs::File {
         match *self {
             Linux(ref file) => file,
-            Fallback(ref named) => named,
+            Fallback(ref named) => named.as_file(),
         }
     }
 }
@@ -49,7 +49,7 @@ impl AsMut<fs::File> for PersistableTempFile {
     fn as_mut(&mut self) -> &mut fs::File {
         match *self {
             Linux(ref mut file) => file,
-            Fallback(ref mut named) => named,
+            Fallback(ref mut named) => named.as_file_mut(),
         }
     }
 }

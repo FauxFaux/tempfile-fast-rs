@@ -1,6 +1,6 @@
 [package]
 name = "tempfile-fast"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Chris West (Faux) <git@goeswhere.com>"]
 
 description = "Support for Linux-specific tempfile extensions"
@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 rand = "0.4"
-tempfile = "2"
+tempfile = "3"
 
 [dev-dependencies]
 tempdir = "0.3"
