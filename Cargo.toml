@@ -10,7 +10,7 @@ categories = ["filesystem", "os"]
 license = "MIT"
 
 [dependencies]
-rand = "0.4"
+rand = "0.5"
 tempfile = "3"
 
 [dev-dependencies]

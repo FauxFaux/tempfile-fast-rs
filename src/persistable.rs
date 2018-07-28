@@ -9,10 +9,10 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::path::Path;
 
-use rand::Rng;
+use rand::RngCore;
 
-use tempfile;
 use linux;
+use tempfile;
 
 /// An abstraction over different platform-specific temporary file optimisations.
 pub enum PersistableTempFile {
