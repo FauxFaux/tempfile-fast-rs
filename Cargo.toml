@@ -1,6 +1,6 @@
 [package]
 name = "tempfile-fast"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Chris West (Faux) <git@goeswhere.com>"]
 
 description = "Support for Linux-specific tempfile extensions"
