@@ -13,8 +13,5 @@ license = "MIT"
 rand = "0.5"
 tempfile = "3"
 
-[dev-dependencies]
-tempdir = "0.3"
-
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.34"

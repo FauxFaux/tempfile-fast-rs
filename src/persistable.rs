@@ -224,12 +224,14 @@ impl PersistableTempFile {
                         }
                     });
                 }
-                Err(error) => if io::ErrorKind::AlreadyExists != error.kind() {
-                    return Err(PersistError {
-                        error,
-                        file: PersistableTempFile::Linux(file),
-                    });
-                },
+                Err(error) => {
+                    if io::ErrorKind::AlreadyExists != error.kind() {
+                        return Err(PersistError {
+                            error,
+                            file: PersistableTempFile::Linux(file),
+                        });
+                    }
+                }
             };
             dest_tmp.pop();
         }

@@ -1,4 +1,4 @@
-extern crate tempdir;
+extern crate tempfile;
 extern crate tempfile_fast;
 
 use std::fs;
@@ -11,7 +11,10 @@ use tempfile_fast::PersistableTempFile;
 
 #[test]
 fn empty_on_linux() {
-    let temp_dir = tempdir::TempDir::new("tempfile-deleted").unwrap();
+    let temp_dir = tempfile::Builder::default()
+        .prefix("tempfile-deleted")
+        .tempdir()
+        .unwrap();
     let tmp = PersistableTempFile::new_in(&temp_dir).unwrap();
 
     // Will only actually be deleted on (modern) linux:
@@ -28,7 +31,10 @@ fn empty_on_linux() {
 
 #[test]
 fn overwrite() {
-    let temp_dir = tempdir::TempDir::new("tempfile-deleted").unwrap();
+    let temp_dir = tempfile::Builder::default()
+        .prefix("tempfile-deleted")
+        .tempdir()
+        .unwrap();
     let root = temp_dir.path();
     let mut sub = root.to_path_buf();
     sub.push("sub");
@@ -80,7 +86,10 @@ fn read<R: Read>(mut thing: R) -> String {
 
 #[test]
 fn read_write() {
-    let temp_dir = tempdir::TempDir::new("tempfile-deleted").unwrap();
+    let temp_dir = tempfile::Builder::default()
+        .prefix("tempfile-deleted")
+        .tempdir()
+        .unwrap();
     let mut tmp = PersistableTempFile::new_in(temp_dir.path()).unwrap();
     write_hi(&mut tmp);
     let mut tmp = write_hi(tmp);
