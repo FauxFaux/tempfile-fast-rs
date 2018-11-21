@@ -10,7 +10,7 @@ categories = ["filesystem", "os"]
 license = "MIT"
 
 [dependencies]
-rand = "0.5"
+rand = "0.6"
 tempfile = "3"
 
 [target.'cfg(unix)'.dependencies]
