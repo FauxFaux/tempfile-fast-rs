@@ -167,7 +167,7 @@ impl PersistableTempFile {
     pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         match self {
             Linux(file) => {
-                Self::persist_noclobber_file(&file, dest).map_err(|error| PersistError {
+                linux::link_at(&file, dest).map_err(|error| PersistError {
                     error,
                     file: PersistableTempFile::Linux(file),
                 })
@@ -177,10 +177,6 @@ impl PersistableTempFile {
                 .map(|_| ())
                 .map_err(PersistError::from),
         }
-    }
-
-    fn persist_noclobber_file<P: AsRef<Path>>(file: &fs::File, dest: P) -> io::Result<()> {
-        linux::link_at(file, dest)
     }
 
     /// Store this temporary file into a real name.
@@ -195,7 +191,7 @@ impl PersistableTempFile {
             Fallback(named) => return named.persist(dest).map(|_| ()).map_err(PersistError::from),
         };
 
-        if Self::persist_noclobber_file(&file, &dest).is_ok() {
+        if linux::link_at(&file, &dest).is_ok() {
             return Ok(());
         };
 
@@ -209,7 +205,7 @@ impl PersistableTempFile {
             // add a new filename
             dest_tmp.push(format!(".{:x}.tmp", rng.next_u64()));
 
-            match Self::persist_noclobber_file(&file, &dest_tmp) {
+            match linux::link_at(&file, &dest_tmp) {
                 Ok(()) => {
                     // we succeeded in converting into a named temporary file,
                     // now overwrite the destination
