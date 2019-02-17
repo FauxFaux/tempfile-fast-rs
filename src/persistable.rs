@@ -166,12 +166,10 @@ impl PersistableTempFile {
     /// The path must not exist, and must be on the same "filesystem".
     pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         match self {
-            Linux(file) => {
-                linux::link_at(&file, dest).map_err(|error| PersistError {
-                    error,
-                    file: PersistableTempFile::Linux(file),
-                })
-            }
+            Linux(file) => linux::link_at(&file, dest).map_err(|error| PersistError {
+                error,
+                file: PersistableTempFile::Linux(file),
+            }),
             Fallback(named) => named
                 .persist_noclobber(dest)
                 .map(|_| ())
