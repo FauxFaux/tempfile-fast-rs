@@ -22,13 +22,13 @@ mod linux {
     use std::path::Path;
 
     #[inline]
-    fn create_nonexclusive_tempfile_in<P>(dir: P) -> io::Result<fs::File> {
+    pub fn create_nonexclusive_tempfile_in<P>(_dir: P) -> io::Result<fs::File> {
         Err(io::ErrorKind::InvalidInput.into())
     }
 
     #[inline]
-    fn link_at<P: AsRef<Path>>(what: &fs::File, dest: P) -> io::Result<()> {
-        Err(io::ErrorKind::InvalidInput.into())
+    pub fn link_at<P: AsRef<Path>>(_what: &fs::File, _dest: P) -> io::Result<()> {
+        Err(io::ErrorKind::InvalidData.into())
     }
 }
 
