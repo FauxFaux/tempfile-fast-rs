@@ -11,7 +11,7 @@ use std::path::Path;
 
 use rand::RngCore;
 
-use linux;
+use crate::linux;
 use tempfile;
 
 /// An abstraction over different platform-specific temporary file optimisations.

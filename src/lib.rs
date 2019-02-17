@@ -12,9 +12,6 @@
 //! temp.persist_noclobber("/var/lib/foo/bar").unwrap();
 //! ```
 
-extern crate rand;
-extern crate tempfile;
-
 #[cfg(target_os = "linux")]
 mod linux;
 
@@ -37,4 +34,4 @@ mod linux {
 
 mod persistable;
 
-pub use persistable::PersistableTempFile;
+pub use crate::persistable::PersistableTempFile;
