@@ -1,3 +1,7 @@
+### v0.3.0
+
+ * Actually build on non-linux. :(
+
 ### v0.2.0
 
  * Object, not free function.
