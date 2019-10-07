@@ -34,4 +34,5 @@ mod linux {
 
 mod persistable;
 
+pub use crate::persistable::PersistError;
 pub use crate::persistable::PersistableTempFile;

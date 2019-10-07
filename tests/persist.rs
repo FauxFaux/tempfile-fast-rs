@@ -7,6 +7,7 @@ use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
 
+use tempfile_fast::PersistError;
 use tempfile_fast::PersistableTempFile;
 
 #[test]
@@ -49,7 +50,10 @@ fn overwrite() {
     let tmp = PersistableTempFile::new_in(&sub).unwrap();
     let mut tmp = match tmp.persist_noclobber(&dest) {
         Ok(()) => unreachable!(),
-        Err(e) => e.file,
+        Err(e) => {
+            let e_checked: PersistError = e;
+            e_checked.file
+        }
     };
 
     tmp.write_all(b"yello").unwrap();
