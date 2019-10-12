@@ -151,6 +151,15 @@ pub struct PersistError {
     pub file: PersistableTempFile,
 }
 
+impl PersistError {
+    fn new(error: io::Error, file: fs::File) -> PersistError {
+        PersistError {
+            error,
+            file: PersistableTempFile::Linux(file),
+        }
+    }
+}
+
 impl From<tempfile::PersistError> for PersistError {
     fn from(e: tempfile::PersistError) -> Self {
         PersistError {
@@ -166,10 +175,12 @@ impl PersistableTempFile {
     /// The path must not exist, and must be on the same "filesystem".
     pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         match self {
-            Linux(file) => linux::link_at(&file, dest).map_err(|error| PersistError {
-                error,
-                file: PersistableTempFile::Linux(file),
-            }),
+            Linux(mut file) => {
+                if let Err(error) = file.flush() {
+                    return Err(PersistError::new(error, file));
+                }
+                linux::link_at(&file, dest).map_err(|error| PersistError::new(error, file))
+            }
             Fallback(named) => named
                 .persist_noclobber(dest)
                 .map(|_| ())
@@ -184,10 +195,14 @@ impl PersistableTempFile {
     /// This method may create a named temporary file, and, in pathological failure cases,
     /// may silently fail to remove this temporary file. Sorry.
     pub fn persist_by_rename<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
-        let file = match self {
+        let mut file = match self {
             Linux(file) => file,
             Fallback(named) => return named.persist(dest).map(|_| ()).map_err(PersistError::from),
         };
+
+        if let Err(error) = file.flush() {
+            return Err(PersistError::new(error, file));
+        }
 
         if linux::link_at(&file, &dest).is_ok() {
             return Ok(());
@@ -212,27 +227,21 @@ impl PersistableTempFile {
                         // temporary file we created, but, if we can't, just sigh.
                         let _ = fs::remove_file(&dest_tmp);
 
-                        PersistError {
-                            error,
-                            file: PersistableTempFile::Linux(file),
-                        }
+                        PersistError::new(error, file)
                     });
                 }
                 Err(error) => {
                     if io::ErrorKind::AlreadyExists != error.kind() {
-                        return Err(PersistError {
-                            error,
-                            file: PersistableTempFile::Linux(file),
-                        });
+                        return Err(PersistError::new(error, file));
                     }
                 }
             };
             dest_tmp.pop();
         }
 
-        Err(PersistError {
-            error: io::Error::new(io::ErrorKind::Other, "couldn't create temporary file"),
-            file: PersistableTempFile::Linux(file),
-        })
+        Err(PersistError::new(
+            io::Error::new(io::ErrorKind::Other, "couldn't create temporary file"),
+            file,
+        ))
     }
 }
