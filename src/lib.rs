@@ -1,13 +1,28 @@
+//! # Sponge
+//!
+//! A [`Sponge`] is a safe and efficient way to update a file in place.
+//!
+//! ### Example
+//!
+//! ```rust
+//! # use std::io::Write;
+//! let mut temp = tempfile_fast::Sponge::new_for("example.txt").unwrap();
+//! temp.write_all(b"hello").unwrap();
+//! temp.commit().unwrap();
+//! ```
+//!
+//! ## PersistableTempFile
+//!
+//! The raw [`PersistableTempFile`] is also available. However,
 //! You probably want to use the `tempfile` crate unless you have
 //! hit a known performance problem, or you only care about modern
 //! Linux. See `README.md` for more details.
 //!
-//! # Example
+//! ### Example (raw)
 //!
 //! ```rust,no_run
 //! # use std::io::Write;
-//! extern crate tempfile_fast;
-//! let mut temp =  tempfile_fast::PersistableTempFile::new_in("/var/lib/foo").unwrap();
+//! let mut temp = tempfile_fast::PersistableTempFile::new_in("/var/lib/foo").unwrap();
 //! temp.write_all(b"hello").unwrap();
 //! temp.persist_noclobber("/var/lib/foo/bar").unwrap();
 //! ```
@@ -33,6 +48,8 @@ mod linux {
 }
 
 mod persistable;
+mod sponge;
 
 pub use crate::persistable::PersistError;
 pub use crate::persistable::PersistableTempFile;
+pub use sponge::Sponge;
