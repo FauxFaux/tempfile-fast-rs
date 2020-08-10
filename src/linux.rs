@@ -17,10 +17,6 @@ use self::libc::O_CLOEXEC;
 use self::libc::O_RDWR;
 use self::libc::O_TMPFILE;
 
-pub fn create_nonexclusive_tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<fs::File> {
-    create(dir.as_ref())
-}
-
 pub fn link_at<P: AsRef<Path>>(what: &fs::File, dest: P) -> io::Result<()> {
     let old_path: CString = CString::new(format!("/proc/self/fd/{}", what.as_raw_fd())).unwrap();
     let new_path = cstr(dest.as_ref())?;
@@ -34,9 +30,10 @@ pub fn cstr(path: &Path) -> io::Result<CString> {
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "path contained a null"))
 }
 
-pub fn create(dir: &Path) -> io::Result<fs::File> {
+pub fn create_nonexclusive_tempfile_in(dir: impl AsRef<Path>) -> io::Result<fs::File> {
+    let path: &Path = dir.as_ref();
     match unsafe {
-        let path = cstr(dir)?;
+        let path = cstr(path)?;
         open(path.as_ptr(), O_CLOEXEC | O_TMPFILE | O_RDWR, 0o600)
     } {
         -1 => Err(io::ErrorKind::InvalidInput.into()),
