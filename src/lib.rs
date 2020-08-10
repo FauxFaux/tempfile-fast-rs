@@ -1,4 +1,8 @@
-//! # Sponge
+//! # tempfile-fast
+//!
+//! (Slightly) faster temporary files on Linux.
+//!
+//! ## Sponge
 //!
 //! A [`Sponge`] is a safe and efficient way to update a file in place.
 //!
@@ -14,9 +18,9 @@
 //! ## PersistableTempFile
 //!
 //! The raw [`PersistableTempFile`] is also available. However,
-//! You probably want to use the `tempfile` crate unless you have
+//! You probably want to use the [`tempfile`] crate unless you have
 //! hit a known performance problem, or you only care about modern
-//! Linux. See `README.md` for more details.
+//! Linux. See [`README.md`] for more details.
 //!
 //! ### Example (raw)
 //!
@@ -26,6 +30,11 @@
 //! temp.write_all(b"hello").unwrap();
 //! temp.persist_noclobber("/var/lib/foo/bar").unwrap();
 //! ```
+//!
+//! [`Sponge`]: struct.Sponge.html
+//! [`PersistableTempFile`]: enum.PersistableTempFile.html
+//! [`tempfile`]: https://crates.io/crates/tempfile
+//! [`README.md`]: https://github.com/FauxFaux/tempfile-fast-rs/blob/master/README.md
 
 #[cfg(target_os = "linux")]
 mod linux;

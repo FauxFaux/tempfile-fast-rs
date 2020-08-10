@@ -23,8 +23,11 @@ pub enum PersistableTempFile {
 use self::PersistableTempFile::*;
 
 impl PersistableTempFile {
-    /// Create a temporary file in a given filesystem, or, if the filesystem does not support
-    /// creating secure temporary files, create a `tempfile::NamedTemporaryFile`.
+    /// Create a temporary file in a given filesystem, or, if the filesystem
+    /// does not support creating secure temporary files, create a
+    /// [`tempfile::NamedTempFile`].
+    ///
+    /// [`tempfile::NamedTempFile`]: https://docs.rs/tempfile/*/tempfile/struct.NamedTempFile.html
     pub fn new_in<P: AsRef<Path>>(dir: P) -> io::Result<PersistableTempFile> {
         if let Ok(file) = linux::create_nonexclusive_tempfile_in(&dir) {
             return Ok(Linux(file));
@@ -142,7 +145,7 @@ impl ::std::os::windows::io::AsRawHandle for PersistableTempFile {
     }
 }
 
-/// Error returned when persisting a temporary file fails
+/// Error returned when persisting a temporary file fails.
 #[derive(Debug)]
 pub struct PersistError {
     /// The underlying IO error.
@@ -172,7 +175,11 @@ impl From<tempfile::PersistError> for PersistError {
 impl PersistableTempFile {
     /// Store this temporary file into a real file path.
     ///
-    /// The path must not exist, and must be on the same "filesystem".
+    /// The path must not exist and must be on the same mounted filesystem.
+    ///
+    /// (Note: Linux permits a filesystem to be mounted at multiple points,
+    /// but the `link()` function does not work across different mount points,
+    /// even if the same filesystem is mounted on both.)
     pub fn persist_noclobber<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         match self {
             Linux(mut file) => {
@@ -190,10 +197,14 @@ impl PersistableTempFile {
 
     /// Store this temporary file into a real name.
     ///
-    /// The path must be on the same filesystem. It may exist, and will be overwritten.
+    /// The path must be on the same mounted filesystem. It may exist, and will be overwritten.
     ///
     /// This method may create a named temporary file, and, in pathological failure cases,
     /// may silently fail to remove this temporary file. Sorry.
+    ///
+    /// (Note: Linux permits a filesystem to be mounted at multiple points,
+    /// but the `link()` function does not work across different mount points,
+    /// even if the same filesystem is mounted on both.)
     pub fn persist_by_rename<P: AsRef<Path>>(self, dest: P) -> Result<(), PersistError> {
         let mut file = match self {
             Linux(file) => file,
