@@ -14,13 +14,13 @@ use super::PersistableTempFile;
 ///
 /// Ownership and permission is preserved, where appropriate for the platform.
 ///
-/// Space is needed to soak up these writes: if you are overwriting a large file, you may need
-/// disc space for the entire file to be stored twice.
+/// Space is needed to soak up these writes: If you are overwriting a large file, you may need
+/// disk space for the entire file to be stored twice.
 ///
 /// For performance and correctness reasons, many of the things that can go wrong will go wrong at
 /// `commit()` time, not on creation. This might not be what you want if you are doing a very
 /// expensive operation. Most of the failures are permissions errors, however. If you are operating
-/// as a single user inside the user's directory, the chance of failure (except for disc space) is
+/// as a single user inside the user's directory, the chance of failure (except for disk space) is
 /// negligible.
 ///
 /// # Example
