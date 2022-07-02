@@ -12,8 +12,14 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
+async-fs = { version = "2.1.1", optional = true }
+async-global-executor = { version = "2.4.1", optional = true }
+futures-io = { version = "0.3.30", optional = true }
 rand = "0.8"
 tempfile = "3.4"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.34"
+
+[features]
+async = ["dep:async-fs", "dep:async-global-executor", "dep:futures-io"]

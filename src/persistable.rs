@@ -9,7 +9,16 @@ use std::io::Write;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::path::Path;
+#[cfg(feature = "async")]
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 
+#[cfg(feature = "async")]
+use async_fs::File as AsyncFile;
+#[cfg(feature = "async")]
+use futures_io::{AsyncBufRead, AsyncRead, AsyncSeek, AsyncWrite, IoSlice, IoSliceMut};
 use rand::RngCore;
 
 use crate::linux;
@@ -54,6 +63,19 @@ impl<F> PersistableTempFile<F> {
         let (file, path) = tempfile::Builder::new().tempfile_in(dir)?.into_parts();
         let t = tempfile::NamedTempFile::from_parts(make(file)?, path);
         Ok(Fallback(t))
+    }
+}
+
+#[cfg(feature = "async")]
+impl PersistableTempFile<AsyncFile> {
+    /// Create a temporary file in a given filesystem, or, if the filesystem
+    /// does not support creating secure temporary files, create a
+    /// [`tempfile::NamedTempFile`].
+    ///
+    /// [`tempfile::NamedTempFile`]: https://docs.rs/tempfile/*/tempfile/struct.NamedTempFile.html
+    pub async fn async_new_in<P: AsRef<Path>>(dir: P) -> io::Result<Self> {
+        let dir = dir.as_ref().to_path_buf();
+        async_global_executor::spawn_blocking(|| Self::make_in(dir, |f| Ok(f.into()))).await
     }
 }
 
@@ -175,6 +197,74 @@ where
 {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         self.deref_ref().seek(pos)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<F: AsyncRead + Unpin> AsyncRead for PersistableTempFile<F> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_read(cx, buf)
+    }
+
+    fn poll_read_vectored(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &mut [IoSliceMut<'_>],
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_read_vectored(cx, bufs)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<F: AsyncBufRead + Unpin> AsyncBufRead for PersistableTempFile<F> {
+    fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_fill_buf(cx)
+    }
+
+    fn consume(self: Pin<&mut Self>, amt: usize) {
+        Pin::new(&mut *self.get_mut().as_mut()).consume(amt)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<F: AsyncWrite + Unpin> AsyncWrite for PersistableTempFile<F> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_write(cx, buf)
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_flush(cx)
+    }
+
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_close(cx)
+    }
+
+    fn poll_write_vectored(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[IoSlice<'_>],
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_write_vectored(cx, bufs)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<F: AsyncSeek + Unpin> AsyncSeek for PersistableTempFile<F> {
+    fn poll_seek(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        pos: SeekFrom,
+    ) -> Poll<io::Result<u64>> {
+        Pin::new(&mut *self.get_mut().as_mut()).poll_seek(cx, pos)
     }
 }
 
