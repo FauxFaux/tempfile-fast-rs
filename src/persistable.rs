@@ -14,9 +14,9 @@ use rand::RngCore;
 use crate::linux;
 
 /// An abstraction over different platform-specific temporary file optimisations.
-pub enum PersistableTempFile {
-    Linux(fs::File),
-    Fallback(tempfile::NamedTempFile),
+pub enum PersistableTempFile<F = fs::File> {
+    Linux(F),
+    Fallback(tempfile::NamedTempFile<F>),
 }
 
 use self::PersistableTempFile::*;
@@ -36,9 +36,29 @@ impl PersistableTempFile {
     }
 }
 
-impl AsRef<fs::File> for PersistableTempFile {
+impl<F> PersistableTempFile<F> {
+    /// Create a temporary file in a given filesystem, or, if the filesystem
+    /// does not support creating secure temporary files, create a
+    /// [`tempfile::NamedTempFile`].
+    ///
+    /// [`tempfile::NamedTempFile`]: https://docs.rs/tempfile/*/tempfile/struct.NamedTempFile.html
+    pub fn make_in<P: AsRef<Path>, M: FnOnce(fs::File) -> io::Result<F>>(
+        dir: P,
+        make: M,
+    ) -> io::Result<PersistableTempFile<F>> {
+        if let Ok(file) = linux::create_nonexclusive_tempfile_in(&dir) {
+            return Ok(Linux(make(file)?));
+        }
+
+        let (file, path) = tempfile::Builder::new().tempfile_in(dir)?.into_parts();
+        let t = tempfile::NamedTempFile::from_parts(make(file)?, path);
+        Ok(Fallback(t))
+    }
+}
+
+impl<F> AsRef<F> for PersistableTempFile<F> {
     #[inline]
-    fn as_ref(&self) -> &fs::File {
+    fn as_ref(&self) -> &F {
         match *self {
             Linux(ref file) => file,
             Fallback(ref named) => named.as_file(),
@@ -46,9 +66,9 @@ impl AsRef<fs::File> for PersistableTempFile {
     }
 }
 
-impl AsMut<fs::File> for PersistableTempFile {
+impl<F> AsMut<F> for PersistableTempFile<F> {
     #[inline]
-    fn as_mut(&mut self) -> &mut fs::File {
+    fn as_mut(&mut self) -> &mut F {
         match *self {
             Linux(ref mut file) => file,
             Fallback(ref mut named) => named.as_file_mut(),
@@ -56,22 +76,32 @@ impl AsMut<fs::File> for PersistableTempFile {
     }
 }
 
-impl Deref for PersistableTempFile {
-    type Target = fs::File;
+impl<F> Deref for PersistableTempFile<F> {
+    type Target = F;
     #[inline]
-    fn deref(&self) -> &fs::File {
+    fn deref(&self) -> &F {
         self.as_ref()
     }
 }
 
-impl DerefMut for PersistableTempFile {
+impl<F> DerefMut for PersistableTempFile<F> {
     #[inline]
-    fn deref_mut(&mut self) -> &mut fs::File {
+    fn deref_mut(&mut self) -> &mut F {
         self.as_mut()
     }
 }
 
-impl fmt::Debug for PersistableTempFile {
+impl<'a: 'b, 'b, F: 'b> PersistableTempFile<F> {
+    #[inline]
+    fn deref_ref(self: &mut &'a Self) -> &'b F {
+        match **self {
+            Linux(ref file) => file,
+            Fallback(ref file) => file.as_file(),
+        }
+    }
+}
+
+impl<F> fmt::Debug for PersistableTempFile<F> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -84,13 +114,13 @@ impl fmt::Debug for PersistableTempFile {
     }
 }
 
-impl Read for PersistableTempFile {
+impl<F: Read> Read for PersistableTempFile<F> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.as_mut().read(buf)
     }
 }
 
-impl Write for PersistableTempFile {
+impl<F: Write> Write for PersistableTempFile<F> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.as_mut().write(buf)
     }
@@ -100,36 +130,45 @@ impl Write for PersistableTempFile {
     }
 }
 
-impl Seek for PersistableTempFile {
+impl<F: Seek> Seek for PersistableTempFile<F> {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         self.as_mut().seek(pos)
     }
 }
 
-impl<'a> Read for &'a PersistableTempFile {
+impl<'a: 'b, 'b, F: 'b> Read for &'a PersistableTempFile<F>
+where
+    &'b F: Read,
+{
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.as_ref().read(buf)
+        self.deref_ref().read(buf)
     }
 }
 
-impl<'a> Write for &'a PersistableTempFile {
+impl<'a: 'b, 'b, F: 'b> Write for &'a PersistableTempFile<F>
+where
+    &'b F: Write,
+{
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.as_ref().write(buf)
+        self.deref_ref().write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.as_ref().flush()
+        self.deref_ref().flush()
     }
 }
 
-impl<'a> Seek for &'a PersistableTempFile {
+impl<'a: 'b, 'b, F: 'b> Seek for &'a PersistableTempFile<F>
+where
+    &'b F: Seek,
+{
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
-        self.as_ref().seek(pos)
+        self.deref_ref().seek(pos)
     }
 }
 
 #[cfg(unix)]
-impl ::std::os::unix::io::AsRawFd for PersistableTempFile {
+impl<F: ::std::os::unix::io::AsRawFd> ::std::os::unix::io::AsRawFd for PersistableTempFile<F> {
     #[inline]
     fn as_raw_fd(&self) -> ::std::os::unix::io::RawFd {
         self.as_ref().as_raw_fd()
@@ -137,7 +176,9 @@ impl ::std::os::unix::io::AsRawFd for PersistableTempFile {
 }
 
 #[cfg(windows)]
-impl ::std::os::windows::io::AsRawHandle for PersistableTempFile {
+impl<F: ::std::os::windows::io::AsRawHandle> ::std::os::windows::io::AsRawHandle
+    for PersistableTempFile<F>
+{
     #[inline]
     fn as_raw_handle(&self) -> ::std::os::windows::io::RawHandle {
         self.as_ref().as_raw_handle()
@@ -146,25 +187,25 @@ impl ::std::os::windows::io::AsRawHandle for PersistableTempFile {
 
 /// Error returned when persisting a temporary file fails.
 #[derive(Debug)]
-pub struct PersistError {
+pub struct PersistError<F = fs::File> {
     /// The underlying IO error.
     pub error: io::Error,
     /// The temporary file that couldn't be persisted.
-    pub file: PersistableTempFile,
+    pub file: PersistableTempFile<F>,
 }
 
-impl PersistError {
-    fn new(error: io::Error, file: fs::File) -> PersistError {
-        PersistError {
+impl<F> PersistError<F> {
+    fn new(error: io::Error, file: F) -> Self {
+        Self {
             error,
             file: PersistableTempFile::Linux(file),
         }
     }
 }
 
-impl From<tempfile::PersistError> for PersistError {
-    fn from(e: tempfile::PersistError) -> Self {
-        PersistError {
+impl<F> From<tempfile::PersistError<F>> for PersistError<F> {
+    fn from(e: tempfile::PersistError<F>) -> Self {
+        Self {
             error: e.error,
             file: PersistableTempFile::Fallback(e.file),
         }
