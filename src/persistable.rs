@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fs;
 use std::io;
+use std::io::BufRead;
 use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
@@ -117,6 +118,16 @@ impl<F> fmt::Debug for PersistableTempFile<F> {
 impl<F: Read> Read for PersistableTempFile<F> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.as_mut().read(buf)
+    }
+}
+
+impl<F: BufRead> BufRead for PersistableTempFile<F> {
+    fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        self.as_mut().fill_buf()
+    }
+
+    fn consume(&mut self, amt: usize) {
+        self.as_mut().consume(amt)
     }
 }
 
