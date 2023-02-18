@@ -98,7 +98,7 @@ fn read_write() {
     write_hi(&mut tmp);
     let mut tmp = write_hi(tmp);
 
-    assert_eq!(1, (&mut tmp).seek(SeekFrom::Current(-3)).unwrap());
+    assert_eq!(1, tmp.seek(SeekFrom::Current(-3)).unwrap());
 
     assert_eq!("ihi", read(&mut tmp));
 
