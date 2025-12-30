@@ -1,6 +1,7 @@
 ## (Slightly) faster temporary files on Linux
 
-[![Build status](https://ci.appveyor.com/api/projects/status/0bf0le9lcdb07l4u/branch/master?svg=true)](https://ci.appveyor.com/project/FauxFaux/tempfile-fast-rs/branch/master)
+![gha on ubuntu](https://github.com/FauxFaux/tempfile-fast-rs/actions/workflows/rust-ubuntu.yml/badge.svg)
+![gha on windows](https://github.com/FauxFaux/tempfile-fast-rs/actions/workflows/rust-win.yml/badge.svg)
 [![](https://img.shields.io/crates/v/tempfile-fast.svg)](https://crates.io/crates/tempfile-fast)
 
 On "recent" Linux (~2014+), filesystems support a new type of unnamed, persistable temporary file.
