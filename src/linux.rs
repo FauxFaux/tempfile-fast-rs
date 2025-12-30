@@ -8,14 +8,14 @@ use std::os::unix::io::AsRawFd;
 use std::os::unix::io::FromRawFd;
 use std::path::Path;
 
-use self::libc::c_char;
-use self::libc::linkat;
-use self::libc::open64 as open;
 use self::libc::AT_FDCWD;
 use self::libc::AT_SYMLINK_FOLLOW;
 use self::libc::O_CLOEXEC;
 use self::libc::O_RDWR;
 use self::libc::O_TMPFILE;
+use self::libc::c_char;
+use self::libc::linkat;
+use self::libc::open64 as open;
 
 pub fn link_at<P: AsRef<Path>>(what: &fs::File, dest: P) -> io::Result<()> {
     let old_path: CString = CString::new(format!("/proc/self/fd/{}", what.as_raw_fd())).unwrap();
@@ -43,13 +43,15 @@ pub fn create_nonexclusive_tempfile_in(dir: impl AsRef<Path>) -> io::Result<fs::
 
 /// Attempt to link an old symlink to a file back into the filesystem.
 unsafe fn link_symlink_fd_at(old_path: &CString, new_path: &CString) -> io::Result<()> {
-    if linkat(
-        AT_FDCWD,
-        old_path.as_ptr() as *const c_char,
-        AT_FDCWD,
-        new_path.as_ptr() as *const c_char,
-        AT_SYMLINK_FOLLOW,
-    ) != 0
+    if unsafe {
+        linkat(
+            AT_FDCWD,
+            old_path.as_ptr() as *const c_char,
+            AT_FDCWD,
+            new_path.as_ptr() as *const c_char,
+            AT_SYMLINK_FOLLOW,
+        )
+    } != 0
     {
         Err(io::Error::last_os_error())
     } else {

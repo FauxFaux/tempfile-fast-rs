@@ -9,7 +9,7 @@ readme = "README.md"
 categories = ["filesystem", "os"]
 license = "MIT"
 
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 rand = "0.9"
