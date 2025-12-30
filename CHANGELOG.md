@@ -1,3 +1,25 @@
+### v0.3.5
+
+ * Bump edition and deps.
+ * Clarify further that this crate is likely irrelevant.
+
+### v0.3.4
+
+ * Simplify create.
+ * Bump edition and deps.
+
+### v0.3.3
+
+ * Add `Sponge` type. 
+
+### v.0.3.2
+
+ * Expose error types.
+
+### v0.3.1
+
+ * Bump deps.
+
 ### v0.3.0
 
  * Actually build on non-linux. :(
