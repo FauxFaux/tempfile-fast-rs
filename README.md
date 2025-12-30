@@ -18,6 +18,9 @@ The excellent [`tempfile`](https://crates.io/crates/tempfile) crate
 It does not, however, expose unnamed (secure, fast), persistable (convenient) files.
 This crate does.
 
+The performance, or even the series of operations, may be identical for your use-case:
+`tempfile` has changed significantly since this code was written.
+
 On non-modern-Linux, this crate falls back to using `tempfile`'s `NamedTemporaryFile` directly.
 
 
