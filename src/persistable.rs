@@ -219,7 +219,7 @@ impl PersistableTempFile {
         };
 
         let mut dest_tmp = dest.as_ref().to_path_buf();
-        let mut rng = ::rand::thread_rng();
+        let mut rng = ::rand::rng();
 
         // pop the filename off
         dest_tmp.pop();
