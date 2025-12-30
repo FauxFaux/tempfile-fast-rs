@@ -106,13 +106,13 @@ impl Seek for PersistableTempFile {
     }
 }
 
-impl<'a> Read for &'a PersistableTempFile {
+impl Read for &PersistableTempFile {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.as_ref().read(buf)
     }
 }
 
-impl<'a> Write for &'a PersistableTempFile {
+impl Write for &PersistableTempFile {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.as_ref().write(buf)
     }
@@ -122,7 +122,7 @@ impl<'a> Write for &'a PersistableTempFile {
     }
 }
 
-impl<'a> Seek for &'a PersistableTempFile {
+impl Seek for &PersistableTempFile {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         self.as_ref().seek(pos)
     }
@@ -250,7 +250,7 @@ impl PersistableTempFile {
         }
 
         Err(PersistError::new(
-            io::Error::new(io::ErrorKind::Other, "couldn't create temporary file"),
+            io::Error::other("couldn't create temporary file"),
             file,
         ))
     }
