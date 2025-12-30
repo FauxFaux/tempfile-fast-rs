@@ -1,6 +1,5 @@
 ## (Slightly) faster temporary files on Linux
 
-[![Build status](https://api.travis-ci.org/FauxFaux/tempfile-fast-rs.png)](https://travis-ci.org/FauxFaux/tempfile-fast-rs)
 [![Build status](https://ci.appveyor.com/api/projects/status/0bf0le9lcdb07l4u/branch/master?svg=true)](https://ci.appveyor.com/project/FauxFaux/tempfile-fast-rs/branch/master)
 [![](https://img.shields.io/crates/v/tempfile-fast.svg)](https://crates.io/crates/tempfile-fast)
 
@@ -32,17 +31,17 @@ Support for `O_TMPFILE` was added to:
 
 Some distros, with release dates, End of Life dates, and kernel versions:
 
- * Ubuntu 12.04 (Apr 2012 - Apr 2017): 3.2
- * Debian Wheezy (May 2013 - May 2018): 3.2
- * Ubuntu 14.04.0 (Apr 2014 - Apr 2019): 3.13
  * RHEL 7 (Jun 2014 - Jun 2024): 3.10
  * Debian Jessie (Apr 2015 - Apr 2020): 3.16
  * OpenSUSE Leap 42.1 (Nov 2015 - May 2017): 4.1
  * Ubuntu 14.04.5 (Aug 2016 - Apr 2019): 4.4
- * Debian Stretch (Jun 2017 - ): 4.9
+ * Debian Stretch (Jun 2017 - Jul 2020): 4.9
+ * Ubuntu 16.04.2 (Apr 2016 - Apr 2021): 4.15
+ * RHEL 8 (May 2019 - May 2029): 4.18
+ * Debian Buster (July 2019 - Sep 2022): 4.19
 
-i.e. as of 2017, the latest version, and even the previous version,
-of everything except CentOS/RHEL looks pretty promising. 
+i.e. since about 2024, everything in support,
+  even for RHEL, will likely be new enough.
 
 
 ### Upstreaming
