@@ -9,7 +9,7 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::path::Path;
 
-use rand::RngCore;
+use rand::Rng;
 
 use crate::linux;
 

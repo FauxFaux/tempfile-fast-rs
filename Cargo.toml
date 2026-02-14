@@ -12,7 +12,7 @@ license = "MIT"
 edition = "2024"
 
 [dependencies]
-rand = "0.9"
+rand = "0.10"
 tempfile = "3"
 
 [target.'cfg(unix)'.dependencies]
